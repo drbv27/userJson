@@ -65,10 +65,10 @@ function App() {
     fetchUsers();
   }, []);
 
-  //👇 lo usamos para poner el foco en el input TODO:revisar el useRef
+  //👇 lo usamos para poner el foco en el input DONE:revisar el useRef
   useEffect(() => {
     searchInputRef.current?.focus();
-  }, []);
+  }, [loading]); // 👈 solucionado el useref el focus se ejecutaba antes de que se pudiera poner, ya que no exista por el loading por eso le pedimos que se ejecute acada que loading cambie
 
   //👇 lo usamos para filtrar eficientemente los usarios
   const filteredUsers = useMemo(() => {
