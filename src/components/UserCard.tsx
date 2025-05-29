@@ -1,5 +1,5 @@
 //src/components/UserCars.tsx
-import type { User } from "../App";
+import type User from "../helpers/interfaces";
 
 interface UserCardProps {
   user: User;

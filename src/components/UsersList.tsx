@@ -1,5 +1,5 @@
 //src/components/UsersList.tsx
-import type { User } from "../App";
+import type User from "../helpers/interfaces";
 import UserCard from "./UserCard";
 
 const UsersList = ({ users }: any) => {

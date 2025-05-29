@@ -1,91 +1,73 @@
 //src/App.tsx
-import { useState, useEffect, useRef, useMemo } from "react"; //importamos todos los hooks necesarios
+import { useState, useEffect, useRef, useMemo, useReducer } from "react"; //importamos todos los hooks necesarios
 import "./App.css";
 import axios from "axios";
-import User from "./components/UserCard";
 import UsersList from "./components/UsersList";
 import { MdErrorOutline } from "react-icons/md";
+import type User from "./helpers/interfaces";
+import type { FetchState } from "./helpers/interfaces";
 
-export interface Geo {
-  lat: string;
-  lng: string;
-}
-export interface Address {
-  city: string;
-  geo: Geo;
-  street: string;
-  suite: string;
-  zipcode: string;
-}
+const initialState: FetchState = {
+  data: [],
+  loading: true,
+  error: null,
+};
 
-export interface Company {
-  bs: string;
-  catchPhrase: string;
-  name: string;
-}
-
-export interface User {
-  id: number;
-  name: string;
-  username: string;
-  email: string;
-  phone: string;
-  website: string;
-  address: Address;
-  company: Company;
+function fetchReducer(state: FetchState, action: any): FetchState {
+  console.log("Dispatching", action.type); //para debugear
+  switch (action.type) {
+    case "FETCH_INIT":
+      return { ...state, loading: true, error: null };
+    case "FETCH_SUCCESS":
+      return { ...state, loading: false, data: action.payload };
+    case "FETCH_FAILURE":
+      return { ...state, loading: false, error: action.payload };
+    default:
+      return state;
+  }
 }
 
 function App() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(fetchReducer, initialState);
   const [searchTerm, setSearchTerm] = useState<string>(""); //👈🏼 estado para la busqueda
   const searchInputRef = useRef<HTMLInputElement>(null); //ref para el input
 
   useEffect(() => {
     const fetchUsers = async (): Promise<void> => {
+      dispatch({ type: "FETCH_INIT" }); // 👈 Iniciar carga
       try {
         const response = await axios.get<User[]>(
           "https://jsonplaceholder.typicode.com/users"
         );
-        setUsers(response.data);
-        /* setLoading(false); */ //colocado en el finally
+        dispatch({ type: "FETCH_SUCCESS", payload: response.data }); // 👈 Éxito
       } catch (error) {
-        if (error instanceof Error) {
-          /* setLoading(false); */ //colocado en el finally
-          setError(error.message);
-        } else {
-          setError("Hubo un error en la consulta");
-        }
+        const message =
+          error instanceof Error ? error.message : "Hubo un error";
+        dispatch({ type: "FETCH_FAILURE", payload: message }); // 👈 Fallo
         console.log("error al consultar los usuarios");
-      } finally {
-        setLoading(false); // 👈 Se ejecuta siempre, bueno para quitar el loading
       }
     };
     fetchUsers();
   }, []);
 
-  //👇 lo usamos para poner el foco en el input DONE:revisar el useRef
+  //👇 lo usamos para poner el foco en el input
   useEffect(() => {
     searchInputRef.current?.focus();
-  }, [loading]); // 👈 solucionado el useref el focus se ejecutaba antes de que se pudiera poner, ya que no exista por el loading por eso le pedimos que se ejecute acada que loading cambie
+  }, [state.loading]);
 
   //👇 lo usamos para filtrar eficientemente los usarios
   const filteredUsers = useMemo(() => {
-    //console.log("filtrando usuarios");
-    return users.filter(
-      (
-        user //TODO: Analizar si en vez de includes() usamos mejor startsWith0
-      ) =>
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().startsWith(searchTerm.toLowerCase()) ||
-        user.username.toLowerCase().startsWith(searchTerm.toLowerCase())
+    return state.data.filter(
+      ({ name, email, username }) =>
+        name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        email.toLowerCase().startsWith(searchTerm.toLowerCase()) ||
+        username.toLowerCase().startsWith(searchTerm.toLowerCase())
     );
-  }, [users, searchTerm]); // 👈 Dependencias: se recalcula- solo si users o searchRerm cambian
+  }, [state.data, searchTerm]); // 👈 Dependencias: se recalcula- solo si users o searchRerm cambian
 
   //console.log(users);
 
-  if (loading) {
+  if (state.loading) {
     return (
       <div className="flex flex-col justify-center">
         <h2>Loading....</h2>
@@ -94,7 +76,7 @@ function App() {
     );
   }
 
-  if (error) {
+  if (state.error) {
     return (
       <p>
         <span className="text-red-500">
