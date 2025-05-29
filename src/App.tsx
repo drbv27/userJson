@@ -13,7 +13,12 @@ const initialState: FetchState = {
   error: null,
 };
 
-function fetchReducer(state: FetchState, action: any): FetchState {
+type FetchAction =
+  | { type: "FETCH_INIT" }
+  | { type: "FETCH_SUCCESS"; payload: User[] }
+  | { type: "FETCH_FAILURE"; payload: string };
+
+function fetchReducer(state: FetchState, action: FetchAction): FetchState {
   console.log("Dispatching", action.type); //para debugear
   switch (action.type) {
     case "FETCH_INIT":
